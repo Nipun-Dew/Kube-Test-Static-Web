@@ -40,11 +40,14 @@ jobs:
             ${{ secrets.DOCKER_HUB_USERNAME }}/lugx-web:latest
             ${{ secrets.DOCKER_HUB_USERNAME }}/lugx-web:${{ github.run_id }}
 
-      # Step 5: Push the Docker image to Docker Hub
-      - name: Push Docker image
-        uses: docker/build-push-action@v4
+      # Step 8: Deploy to EC2 and restart lugx-web-deployment
+      - name: SSH to EC2 & Restart Deployment
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/lugx-web:latest
-            ${{ secrets.DOCKER_HUB_USERNAME }}/lugx-web:${{ github.run_id }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Pulling latest image and restarting deployment..."
+            kubectl rollout restart deployment lugx-web-deployment -n default
+            kubectl rollout status deployment lugx-web-deployment -n default
